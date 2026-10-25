@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-amber-50: var(--theme-amber-50, #fffbeb);
+  --color-amber-100: var(--theme-amber-100, #fef3c7);
+  --color-amber-200: var(--theme-amber-200, #fde68a);
+  --color-amber-300: var(--theme-amber-300, #fcd34d);
+  --color-amber-400: var(--theme-amber-400, #fbbf24);
+  --color-amber-500: var(--theme-amber-500, #f59e0b);
+  --color-amber-600: var(--theme-amber-600, #d97706);
+  --color-amber-700: var(--theme-amber-700, #b45309);
+  --color-amber-800: var(--theme-amber-800, #92400e);
+  --color-amber-900: var(--theme-amber-900, #78350f);
+  --color-amber-950: var(--theme-amber-950, #451a03);
+}
+
+/* ========================================================
+   LIGHT & DARK ATMOSPHERIC THEME PALETTES
+   Never flat dead pitch black; layered velvet luxury & high contrast.
+   ======================================================== */
+
+/* 1. Linen (焦糖暖琥珀金) */
+:root,
+[data-theme="linen"] {
+  --theme-amber-50: #fffbeb;
+  --theme-amber-100: #fef3c7;
+  --theme-amber-200: #fde68a;
+  --theme-amber-300: #fcd34d;
+  --theme-amber-400: #fbbf24;
+  --theme-amber-500: #f59e0b;
+  --theme-amber-600: #d97706;
+  --theme-amber-700: #b45309;
+  --theme-amber-800: #92400e;
+  --theme-amber-900: #78350f;
+  --theme-amber-950: #451a03;
+
+  --theme-bg-light: #fbfaf8;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #78716c;
+
+  /* Dark mode luxury: Warm Obsidian Velvet */
+  --theme-bg-dark: #0d1117;
+  --theme-card-dark: #151a24;
+  --theme-card-deep: #0e121a;
+  --theme-card-elevated: #1d2332;
+  --theme-border-dark: rgba(245, 158, 11, 0.16);
+  --theme-border-highlight: rgba(245, 158, 11, 0.28);
+  --theme-glow: rgba(245, 158, 11, 0.14);
+  --theme-glow-secondary: rgba(217, 119, 6, 0.08);
+}
+
+/* 2. Cream / Sage (法式燕麥 · 翡翠夜宴) */
+[data-theme="cream"] {
+  --theme-amber-50: #f0fdfa;
+  --theme-amber-100: #ccfbf1;
+  --theme-amber-200: #99f6e4;
+  --theme-amber-300: #5eead4;
+  --theme-amber-400: #2dd4bf;
+  --theme-amber-500: #14b8a6;
+  --theme-amber-600: #0f766e;
+  --theme-amber-700: #115e59;
+  --theme-amber-800: #134e4a;
+  --theme-amber-900: #042f2e;
+  --theme-amber-950: #021e1d;
+
+  --theme-bg-light: #f7f9f7;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #78716c;
+
+  /* Dark mode luxury: Deep Nordic Jade */
+  --theme-bg-dark: #081313;
+  --theme-card-dark: #0f1f1e;
+  --theme-card-deep: #0a1717;
+  --theme-card-elevated: #162a29;
+  --theme-border-dark: rgba(20, 184, 166, 0.18);
+  --theme-border-highlight: rgba(45, 212, 191, 0.3);
+  --theme-glow: rgba(20, 184, 166, 0.16);
+  --theme-glow-secondary: rgba(13, 148, 136, 0.09);
+}
+
+/* 3. Sky (晨曦晴空 · 琉璃深藍夜) */
+[data-theme="sky"] {
+  --theme-amber-50: #eff6ff;
+  --theme-amber-100: #dbeafe;
+  --theme-amber-200: #bfdbfe;
+  --theme-amber-300: #93c5fd;
+  --theme-amber-400: #60a5fa;
+  --theme-amber-500: #3b82f6;
+  --theme-amber-600: #2563eb;
+  --theme-amber-700: #1d4ed8;
+  --theme-amber-800: #1e40af;
+  --theme-amber-900: #1e3a8a;
+  --theme-amber-950: #172554;
+
+  --theme-bg-light: #f8fafc;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #78716c;
+
+  /* Dark mode luxury: Deep Midnight Sapphire */
+  --theme-bg-dark: #09101f;
+  --theme-card-dark: #101c33;
+  --theme-card-deep: #0b1326;
+  --theme-card-elevated: #172747;
+  --theme-border-dark: rgba(59, 130, 246, 0.2);
+  --theme-border-highlight: rgba(96, 165, 250, 0.32);
+  --theme-glow: rgba(56, 189, 248, 0.16);
+  --theme-glow-secondary: rgba(37, 99, 235, 0.09);
+}
+
+/* 4. Rose (初生柔杏 · 勃根地玫瑰夜宴) */
+[data-theme="rose"] {
+  --theme-amber-50: #fff1f2;
+  --theme-amber-100: #ffe4e6;
+  --theme-amber-200: #fecdd3;
+  --theme-amber-300: #fda4af;
+  --theme-amber-400: #fb7185;
+  --theme-amber-500: #f43f5e;
+  --theme-amber-600: #e11d48;
+  --theme-amber-700: #be123c;
+  --theme-amber-800: #9f1239;
+  --theme-amber-900: #881337;
+  --theme-amber-950: #4c0519;
+
+  --theme-bg-light: #fdf8f9;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #78716c;
+
+  /* Dark mode luxury: Deep Plum Velvet */
+  --theme-bg-dark: #130a11;
+  --theme-card-dark: #1d111b;
+  --theme-card-deep: #160d15;
+  --theme-card-elevated: #281825;
+  --theme-border-dark: rgba(244, 63, 94, 0.2);
+  --theme-border-highlight: rgba(251, 113, 133, 0.32);
+  --theme-glow: rgba(244, 63, 94, 0.15);
+  --theme-glow-secondary: rgba(225, 29, 72, 0.08);
+}
+
+/* 5. Obsidian (曜石夜幕 · 皇家黑金) */
+[data-theme="obsidian"] {
+  --theme-amber-50: #fffbeb;
+  --theme-amber-100: #fef3c7;
+  --theme-amber-200: #fde68a;
+  --theme-amber-300: #fcd34d;
+  --theme-amber-400: #fbbf24;
+  --theme-amber-500: #f59e0b;
+  --theme-amber-600: #d97706;
+  --theme-amber-700: #b45309;
+  --theme-amber-800: #92400e;
+  --theme-amber-900: #78350f;
+  --theme-amber-950: #451a03;
+
+  --theme-bg-light: #f8fafc;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #78716c;
+
+  /* Dark mode luxury: 24K Gold on Titanium Black */
+  --theme-bg-dark: #080c14;
+  --theme-card-dark: #101622;
+  --theme-card-deep: #0a0e18;
+  --theme-card-elevated: #182234;
+  --theme-border-dark: rgba(245, 158, 11, 0.22);
+  --theme-border-highlight: rgba(251, 191, 36, 0.38);
+  --theme-glow: rgba(245, 158, 11, 0.18);
+  --theme-glow-secondary: rgba(251, 191, 36, 0.1);
+}
+
+/* 6. Morandi (莫蘭迪夜色 · 煙燻紫晶) */
+[data-theme="morandi"] {
+  --theme-amber-50: #faf5ff;
+  --theme-amber-100: #f3e8ff;
+  --theme-amber-200: #e9d5ff;
+  --theme-amber-300: #d8b4fe;
+  --theme-amber-400: #c084fc;
+  --theme-amber-500: #a855f7;
+  --theme-amber-600: #9333ea;
+  --theme-amber-700: #7e22ce;
+  --theme-amber-800: #6b21a8;
+  --theme-amber-900: #581c87;
+  --theme-amber-950: #3b0764;
+
+  --theme-bg-light: #fbf9fc;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #78716c;
+
+  /* Dark mode luxury: Deep Smoky Amethyst */
+  --theme-bg-dark: #100d17;
+  --theme-card-dark: #181422;
+  --theme-card-deep: #120e1a;
+  --theme-card-elevated: #231d30;
+  --theme-border-dark: rgba(168, 85, 247, 0.2);
+  --theme-border-highlight: rgba(192, 132, 252, 0.32);
+  --theme-glow: rgba(168, 85, 247, 0.16);
+  --theme-glow-secondary: rgba(147, 51, 234, 0.09);
+}
+
+/* ========================================================
+   LIGHT MODE BODY & CANVAS
+   ======================================================== */
+body {
+  background-color: var(--theme-bg-light, #fbfaf8);
+  color: #1c1917;
+  min-height: 100vh;
+}
+
+/* ========================================================
+   DARK MODE ENHANCED ATMOSPHERE & HIGH LEGIBILITY
+   ======================================================== */
+.dark {
+  color-scheme: dark;
+  /* Crystal-clear typography luminance boost */
+  --theme-text-secondary: #cbd5e1;
+  --theme-text-muted: #94a3b8;
+}
+
+.dark body {
+  background-color: var(--theme-bg-dark, #0d1117);
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, var(--theme-glow, rgba(245, 158, 11, 0.14)), transparent 70%),
+    radial-gradient(circle at 100% 0%, var(--theme-glow-secondary, rgba(217, 119, 6, 0.08)), transparent 40%);
+  background-attachment: fixed;
+  color: #f8fafc;
+}
+
+/* Elevated surface cards with hairline highlight in dark mode */
+.dark .dark\:bg-slate-900\/90,
+.dark .dark\:bg-slate-900\/80,
+.dark .dark\:bg-slate-900\/70,
+.dark .dark\:bg-slate-900\/60,
+.dark .dark\:bg-slate-900 {
+  background-color: var(--theme-card-dark, #151a24) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.dark .dark\:bg-slate-950,
+.dark .dark\:bg-slate-950\/90,
+.dark .dark\:bg-slate-950\/85,
+.dark .dark\:bg-slate-950\/80 {
+  background-color: var(--theme-card-deep, #0e121a) !important;
+}
+
+.dark .dark\:bg-slate-850,
+.dark .dark\:bg-slate-800 {
+  background-color: var(--theme-card-elevated, #1d2332) !important;
+}
+
+/* Refined hairline borders with subtle theme-tinted glow */
+.dark .dark\:border-slate-800,
+.dark .dark\:border-slate-800\/80,
+.dark .dark\:border-slate-800\/60 {
+  border-color: var(--theme-border-dark, rgba(255, 255, 255, 0.12)) !important;
+}
+
+.dark .dark\:border-slate-700 {
+  border-color: var(--theme-border-highlight, rgba(255, 255, 255, 0.22)) !important;
+}
+
+/* High-contrast legibility overrides in dark mode */
+.dark .dark\:text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+.dark .dark\:text-slate-300 {
+  color: #e2e8f0 !important;
+}
+
+.dark .dark\:text-stone-400 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-stone-500:not([class*="dark:text-"]) {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-stone-400:not([class*="dark:text-"]) {
+  color: #94a3b8 !important;
+}
+
+/* Form controls and dropdowns in dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  color-scheme: dark;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dark option {
+  background-color: var(--theme-card-dark, #151a24) !important;
+  color: #f8fafc !important;
+}
+
+/* ========================================================
+   UTILITIES
+   ======================================================== */
+
+/* Hide scrollbars across all browsers when .no-scrollbar is used */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

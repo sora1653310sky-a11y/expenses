@@ -1,0 +1,6 @@
+{
+  "name": "萌寶記帳 - 夫妻共用寶寶支出與預算管理",
+  "description": "專為新手夫妻設計的寶寶支出記帳與財務管理工具，支援自動同步雙方帳戶、每月預算分析、圖表化報表、深淺色與多主題切換、雲端備份及CSV匯出。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function for validating document IDs
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Family shared room documents
+    match /rooms/{roomId} {
+      allow read, write: if isValidId(roomId);
+
+      // Room transactions subcollection
+      match /transactions/{transactionId} {
+        allow get, list: if isValidId(roomId);
+        allow create, update, delete: if isValidId(roomId) && isValidId(transactionId);
+      }
+
+      // Room backups subcollection
+      match /backups/{backupId} {
+        allow get, list: if isValidId(roomId);
+        allow create, update, delete: if isValidId(roomId) && isValidId(backupId);
+      }
+    }
+  }
+}

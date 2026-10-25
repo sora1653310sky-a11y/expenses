@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>萌寶記帳 - 夫妻共用寶寶支出與預算管理</title>
+    <meta name="description" content="專為新手夫妻設計的寶寶支出記帳與財務管理工具，支援自動同步雙方帳戶、每月預算分析、圖表化報表、深淺色與多主題切換、雲端備份及CSV匯出。" />
+    <meta property="og:title" content="萌寶記帳 - 夫妻共用寶寶支出與預算管理" />
+    <meta property="og:description" content="專為新手夫妻設計的寶寶支出記帳與財務管理工具，支援自動同步雙方帳戶、每月預算分析、圖表化報表、深淺色與多主題切換、雲端備份及CSV匯出。" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#d97706" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="萌寶記帳" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Ignore WebSocket and @vite/client HMR errors in iframe environment per environment guidelines
+      window.addEventListener('error', function(event) {
+        if (
+          event &&
+          (event.filename?.includes('@vite/client') ||
+           event.message?.includes('WebSocket') ||
+           event.message?.includes('failed to connect to websocket') ||
+           String(event.message || '').includes('@vite/client') ||
+           (typeof event.target?.src === 'string' && event.target.src.includes('@vite/client')))
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(event) {
+        if (
+          event &&
+          event.reason &&
+          (event.reason.message?.includes('WebSocket') ||
+           String(event.reason).includes('WebSocket') ||
+           String(event.reason?.stack || '').includes('@vite/client'))
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+    </script>
+  </head>
+  <body class="min-h-screen antialiased selection:bg-amber-500/20 selection:text-amber-800">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

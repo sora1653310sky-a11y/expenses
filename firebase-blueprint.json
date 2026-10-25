@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "Room": {
+      "title": "Room",
+      "description": "Shared household room document containing budget, baby info, and couple profile",
+      "type": "object",
+      "properties": {
+        "roomId": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Unique room code identifier such as BABY-8823"
+        },
+        "budget": {
+          "type": "object",
+          "description": "Budget configuration and category budget targets"
+        },
+        "babyInfo": {
+          "type": "object",
+          "description": "Baby profile name, birth date, gender and notes"
+        },
+        "familySettings": {
+          "type": "object",
+          "description": "Dad and Mom profile names, avatars, and salary configurations"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Epoch timestamp of last update"
+        },
+        "updatedBy": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Name or role of person who made the last change"
+        },
+        "version": {
+          "type": "number",
+          "description": "Sequential revision version of room data"
+        }
+      },
+      "required": ["roomId", "updatedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Individual baby income or expense record in the family ledger",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique transaction ID"
+        },
+        "roomId": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Associated room code"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Title or description of the transaction item"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Numeric transaction amount"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["income", "expense"],
+          "description": "Transaction type"
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Expense or income category ID"
+        },
+        "paidBy": {
+          "type": "string",
+          "enum": ["dad", "mom", "joint"],
+          "description": "Which parent paid or received the funds"
+        },
+        "recordedBy": {
+          "type": "string",
+          "enum": ["dad", "mom"],
+          "description": "Which parent entered the record"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "ISO date string YYYY-MM-DD"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional notes or remarks"
+        },
+        "splitMethod": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Expense split rule between couple"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Creation epoch timestamp"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Last updated epoch timestamp"
+        }
+      },
+      "required": ["id", "title", "amount", "category", "paidBy", "date"]
+    },
+    "Backup": {
+      "title": "Backup",
+      "description": "Family room snapshot backup point",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique snapshot ID"
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Epoch timestamp of snapshot creation"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "User description or automatic snapshot reason"
+        },
+        "createdBy": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Creator role or name"
+        },
+        "data": {
+          "type": "object",
+          "description": "Serialized room snapshot state"
+        }
+      },
+      "required": ["id", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/rooms/{roomId}": {
+      "schema": "Room",
+      "description": "Shared household document representing the couple room"
+    },
+    "/rooms/{roomId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of baby expense and income transactions for the room"
+    },
+    "/rooms/{roomId}/backups/{backupId}": {
+      "schema": "Backup",
+      "description": "Collection of cloud backups and time-machine snapshots for the room"
+    }
+  }
+}
