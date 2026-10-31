@@ -29,7 +29,7 @@ interface Props {
   onEditTransaction: (tx: Transaction) => void;
   onOpenBudgetModal: () => void;
   onOpenSettlementModal: () => void;
-  onOpenSyncModal?: (tab?: 'sync' | 'backup' | 'family', subTab?: 'cloud' | 'timemachine' | 'trash' | 'offline') => void;
+  onOpenSyncModal?: (tab?: 'sync' | 'backup' | 'family', subTab?: 'cloud' | 'timemachine' | 'offline') => void;
   onOpenBabyModal?: () => void;
 }
 
@@ -41,7 +41,7 @@ export const DashboardView: React.FC<Props> = ({
   onOpenSyncModal,
   onOpenBabyModal,
 }) => {
-  const { transactions, deleteTransaction, budget, couple, babyInfo, formatAmount, maskBabyName, isPrivacyMode, trashItems, syncState } = useApp();
+  const { transactions, deleteTransaction, budget, couple, babyInfo, formatAmount, maskBabyName, isPrivacyMode, syncState } = useApp();
 
   const [isLocalBabyModalOpen, setIsLocalBabyModalOpen] = useState(false);
   const handleEditBaby = onOpenBabyModal || (() => setIsLocalBabyModalOpen(true));
@@ -49,6 +49,7 @@ export const DashboardView: React.FC<Props> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedPayer, setSelectedPayer] = useState<string>('all');
+  const [dateSortOrder, setDateSortOrder] = useState<'desc' | 'asc'>('desc');
   // Dynamic real-time date detection
   const now = useMemo(() => new Date(), []);
   const realCurrentYear = now.getFullYear();
@@ -216,28 +217,52 @@ export const DashboardView: React.FC<Props> = ({
     };
   }, [transactions, selectedMonth, budget.totalBudget, realCurrentMonthKey]);
 
-  // Filtered transactions for the list
+  // Filtered and sorted transactions for the list (strictly by date order)
   const displayTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      // Month filter
-      if (selectedMonth !== 'all' && !t.date.startsWith(selectedMonth)) return false;
-      // Category filter
-      if (selectedCategory !== 'all' && t.category !== selectedCategory) return false;
-      // Payer filter
-      if (selectedPayer !== 'all' && t.paidBy !== selectedPayer) return false;
-      // Search term
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase();
-        const cat = ALL_CATEGORIES[t.category]?.name.toLowerCase() || '';
-        const matchTitle = t.title.toLowerCase().includes(q);
-        const matchCat = cat.includes(q);
-        const matchNote = (t.note || '').toLowerCase().includes(q);
-        const matchTags = (t.tags || []).some(tag => tag.toLowerCase().includes(q));
-        if (!matchTitle && !matchCat && !matchNote && !matchTags) return false;
-      }
-      return true;
+    return transactions
+      .filter(t => {
+        // Month filter
+        if (selectedMonth !== 'all' && !t.date.startsWith(selectedMonth)) return false;
+        // Category filter
+        if (selectedCategory !== 'all' && t.category !== selectedCategory) return false;
+        // Payer filter
+        if (selectedPayer !== 'all' && t.paidBy !== selectedPayer) return false;
+        // Search term
+        if (searchTerm.trim()) {
+          const q = searchTerm.toLowerCase();
+          const cat = ALL_CATEGORIES[t.category]?.name.toLowerCase() || '';
+          const matchTitle = t.title.toLowerCase().includes(q);
+          const matchCat = cat.includes(q);
+          const matchNote = (t.note || '').toLowerCase().includes(q);
+          const matchTags = (t.tags || []).some(tag => tag.toLowerCase().includes(q));
+          if (!matchTitle && !matchCat && !matchNote && !matchTags) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.date).getTime();
+        const timeB = new Date(b.date).getTime();
+        if (timeA !== timeB) {
+          return dateSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+        }
+        return dateSortOrder === 'desc'
+          ? (b.createdAt || 0) - (a.createdAt || 0)
+          : (a.createdAt || 0) - (b.createdAt || 0);
+      });
+  }, [transactions, selectedMonth, selectedCategory, selectedPayer, searchTerm, dateSortOrder]);
+
+  // Precomputed daily counts and totals for date group headers
+  const dayTotalsMap = useMemo(() => {
+    const map = new Map<string, { count: number; expense: number; income: number }>();
+    displayTransactions.forEach(t => {
+      const entry = map.get(t.date) || { count: 0, expense: 0, income: 0 };
+      entry.count++;
+      if (t.type === 'expense') entry.expense += t.amount;
+      else entry.income += t.amount;
+      map.set(t.date, entry);
     });
-  }, [transactions, selectedMonth, selectedCategory, selectedPayer, searchTerm]);
+    return map;
+  }, [displayTransactions]);
 
   // Determine baby age in months/days
   const babyAgeText = useMemo(() => {
@@ -603,6 +628,17 @@ export const DashboardView: React.FC<Props> = ({
             <option value="mom">媽媽 👩🏻</option>
             <option value="joint">共同基金 🏠</option>
           </select>
+
+          {/* Date Sort Order Toggle */}
+          <button
+            type="button"
+            onClick={() => setDateSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+            className="flex items-center gap-1.5 rounded-xl border border-stone-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-sm shrink-0 font-medium"
+            title="點擊切換日期排序方向"
+          >
+            <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>{dateSortOrder === 'desc' ? '日期：新到舊 ↓' : '日期：舊到新 ↑'}</span>
+          </button>
         </div>
       </div>
 
@@ -614,17 +650,6 @@ export const DashboardView: React.FC<Props> = ({
             <span className="text-xs text-stone-500 dark:text-slate-400">
               ({displayTransactions.length} 筆)
             </span>
-            {trashItems && trashItems.length > 0 && onOpenSyncModal && (
-              <button
-                type="button"
-                onClick={() => onOpenSyncModal('backup', 'trash')}
-                className="ml-1 sm:ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 text-[11px] font-semibold border border-rose-200/80 dark:border-rose-900/40 transition-colors shadow-2xs"
-                title="查看最近刪除項目，可一鍵救回"
-              >
-                <Trash2 className="w-3 h-3 text-rose-600" />
-                <span>回收區 ({trashItems.length} 可救回)</span>
-              </button>
-            )}
           </div>
           <button
             onClick={onOpenNewTransaction}
@@ -646,7 +671,7 @@ export const DashboardView: React.FC<Props> = ({
           </div>
         ) : (
           <div className="divide-y divide-stone-100 dark:divide-slate-800/60">
-            {displayTransactions.map(tx => {
+            {displayTransactions.map((tx, idx) => {
               const cat = ALL_CATEGORIES[tx.category];
               const isExpense = tx.type === 'expense';
               const payerName =
@@ -662,85 +687,127 @@ export const DashboardView: React.FC<Props> = ({
                   ? 'text-pink-600 dark:text-pink-400'
                   : 'text-emerald-600 dark:text-emerald-400';
 
-              return (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between p-4 hover:bg-stone-50/70 dark:hover:bg-slate-850/60 transition-colors group"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    {/* Category Icon */}
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-xs"
-                      style={{
-                        backgroundColor: cat ? cat.bgLight : 'rgba(0,0,0,0.04)',
-                        color: cat ? cat.color : '#475569',
-                      }}
-                    >
-                      <CategoryIcon category={tx.category} className="h-5 w-5" />
-                    </div>
+              const prevTx = idx > 0 ? displayTransactions[idx - 1] : null;
+              const isNewDateGroup = !prevTx || prevTx.date !== tx.date;
+              const daySummary = dayTotalsMap.get(tx.date) || { count: 1, expense: 0, income: 0 };
 
-                    {/* Title and metadata */}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-stone-900 dark:text-white truncate max-w-[200px] sm:max-w-md">
-                          {tx.title}
+              // Format date: e.g. "10月28日 週三"
+              const formatDateHeader = (dStr: string) => {
+                try {
+                  const parts = dStr.split('-');
+                  if (parts.length === 3) {
+                    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                    const weekdays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+                    const dayOfWeek = weekdays[d.getDay()] || '';
+                    return `${Number(parts[1])}月${Number(parts[2])}日 ${dayOfWeek}`;
+                  }
+                } catch {
+                  // fallback
+                }
+                return dStr;
+              };
+
+              return (
+                <React.Fragment key={tx.id}>
+                  {isNewDateGroup && (
+                    <div className="px-4 py-2 bg-stone-100/80 dark:bg-slate-850/80 border-y border-stone-200/60 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-stone-700 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        <span>{formatDateHeader(tx.date)}</span>
+                        <span className="text-[11px] font-normal text-stone-400 dark:text-slate-500">
+                          ({daySummary.count} 筆)
                         </span>
-                        {tx.splitMethod === 'split_50_50' && isExpense && (
-                          <span className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded font-medium hidden sm:inline">
-                            夫妻平攤 (薪資比例)
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">
+                        {daySummary.expense > 0 && (
+                          <span className="text-stone-600 dark:text-slate-300">
+                            支 {formatAmount(daySummary.expense)}
+                          </span>
+                        )}
+                        {daySummary.income > 0 && (
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            收 +{formatAmount(daySummary.income)}
                           </span>
                         )}
                       </div>
-
-                      {/* Clean Unboxed Metadata with · separator */}
-                      <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400 mt-0.5 truncate">
-                        <span>{cat ? cat.name : tx.category}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{tx.date}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className={payerColor}>{payerName} 付</span>
-                        {tx.note && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span className="truncate max-w-[140px] text-stone-400">
-                              {isPrivacyMode ? '••••' : tx.note}
-                            </span>
-                          </>
-                        )}
-                      </div>
                     </div>
-                  </div>
-
-                  {/* Amount & Actions */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
+                  )}
+                  <div className="flex items-center justify-between p-4 hover:bg-stone-50/70 dark:hover:bg-slate-850/60 transition-colors group">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {/* Category Icon */}
                       <div
-                        className={`text-sm sm:text-base font-bold font-mono tabular-nums ${
-                          isExpense ? 'text-stone-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'
-                        }`}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-xs"
+                        style={{
+                          backgroundColor: cat ? cat.bgLight : 'rgba(0,0,0,0.04)',
+                          color: cat ? cat.color : '#475569',
+                        }}
                       >
-                        {formatAmount(isExpense ? -tx.amount : tx.amount, { showSign: true })}
+                        <CategoryIcon category={tx.category} className="h-5 w-5" />
+                      </div>
+
+                      {/* Title and metadata */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-stone-900 dark:text-white truncate max-w-[200px] sm:max-w-md">
+                            {tx.title}
+                          </span>
+                          {tx.splitMethod === 'split_50_50' && isExpense && (
+                            <span className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded font-medium hidden sm:inline">
+                              夫妻平攤 (薪資比例)
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Clean Unboxed Metadata with · separator */}
+                        <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400 mt-0.5 truncate">
+                          <span>{cat ? cat.name : tx.category}</span>
+                          <span aria-hidden="true">·</span>
+                          <span className="font-medium text-stone-700 dark:text-slate-300">{tx.date}</span>
+                          <span aria-hidden="true">·</span>
+                          <span className={payerColor}>{payerName} 付</span>
+                          {tx.note && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span className="truncate max-w-[140px] text-stone-400">
+                                {isPrivacyMode ? '••••' : tx.note}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => onEditTransaction(tx)}
-                        title="編輯此筆帳務"
-                        className="p-1.5 text-stone-400 hover:text-stone-800 dark:hover:text-white rounded-lg hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setTxToDelete(tx)}
-                        title="刪除此筆帳務 (移至回收區防誤刪)"
-                        className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    {/* Amount & Actions */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <div
+                          className={`text-sm sm:text-base font-bold font-mono tabular-nums ${
+                            isExpense ? 'text-stone-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'
+                          }`}
+                        >
+                          {formatAmount(isExpense ? -tx.amount : tx.amount, { showSign: true })}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => onEditTransaction(tx)}
+                          title="編輯此筆帳務"
+                          className="p-1.5 text-stone-400 hover:text-stone-800 dark:hover:text-white rounded-lg hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setTxToDelete(tx)}
+                          title="刪除此筆帳務"
+                          className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </React.Fragment>
               );
             })}
           </div>
@@ -762,7 +829,7 @@ export const DashboardView: React.FC<Props> = ({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-stone-900 dark:text-white">確認刪除帳務記錄？</h3>
-                <p className="text-xs text-stone-500 dark:text-slate-400">刪除後將暫存至「最近刪除」回收區，可隨時還原</p>
+                <p className="text-xs text-stone-500 dark:text-slate-400">刪除後該筆帳務將直接移除並即時同步</p>
               </div>
             </div>
 

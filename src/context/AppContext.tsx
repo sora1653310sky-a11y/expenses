@@ -1031,7 +1031,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeRoomMetaToFirestore(safeRoomId, { updatedBy: updater });
 
       setTransactions(prev => {
-        const next = [newTx, ...prev];
+        const next = [newTx, ...prev].sort((a, b) => {
+          const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        });
         saveToLocalStorage(StorageKeys.TRANSACTIONS, next);
         broadcastLocalChange('SYNC_STATE_UPDATED', {
           transactions: next,
@@ -1062,6 +1066,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             return updated;
           }
           return t;
+        }).sort((a, b) => {
+          const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          return (b.createdAt || 0) - (a.createdAt || 0);
         });
         saveToLocalStorage(StorageKeys.TRANSACTIONS, next);
         broadcastLocalChange('SYNC_STATE_UPDATED', {
@@ -1120,7 +1128,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           saveToLocalStorage(StorageKeys.TRASH, nextTrash);
           return nextTrash;
         });
-        showToast(`已刪除「${removedTx.title}」，已存入「最近刪除」回收區（可隨時還原）`);
+        showToast(`已刪除帳務「${removedTx.title}」！`);
       }
     },
     [syncState.isAutoSync, syncState.roomId, pushToServer, showToast]

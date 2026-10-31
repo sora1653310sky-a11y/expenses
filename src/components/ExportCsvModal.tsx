@@ -42,7 +42,7 @@ export const ExportCsvModal: React.FC<Props> = ({ isOpen, onClose }) => {
         }
       }
       return true;
-    });
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, dateFilter, typeFilter, realCurrentMonth, realLastMonth, realCurrentYear, csvStartDate, csvEndDate]);
 
   if (!isOpen) return null;

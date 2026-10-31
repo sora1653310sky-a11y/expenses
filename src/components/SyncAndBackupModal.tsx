@@ -43,7 +43,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   initialTab?: 'sync' | 'backup' | 'family';
-  initialSubTab?: 'gdrive' | 'cloud' | 'timemachine' | 'trash' | 'offline';
+  initialSubTab?: 'gdrive' | 'cloud' | 'timemachine' | 'offline';
   onOpenShareModal?: () => void;
 }
 
@@ -85,7 +85,9 @@ export const SyncAndBackupModal: React.FC<Props> = ({
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'sync' | 'backup' | 'family'>(initialTab);
-  const [backupSubTab, setBackupSubTab] = useState<'gdrive' | 'cloud' | 'timemachine' | 'trash' | 'offline'>(initialSubTab);
+  const [backupSubTab, setBackupSubTab] = useState<'gdrive' | 'cloud' | 'timemachine' | 'offline'>(
+    initialSubTab && (initialSubTab as string) !== 'trash' ? initialSubTab : 'gdrive'
+  );
 
   const [inputRoomId, setInputRoomId] = useState(syncState.roomId || '');
   const [inputRoomPassword, setInputRoomPassword] = useState(roomPassword || '');
@@ -567,14 +569,14 @@ export const SyncAndBackupModal: React.FC<Props> = ({
                     </span>
                   </div>
                   <p className="text-[11px] text-stone-600 dark:text-slate-300 leading-relaxed">
-                    支援<strong>登入 Google 雲端帳號</strong>直接將帳本儲存在您的個人的 Google Drive 中，同時具備伺服器硬碟持久化、本機時光機快照與誤刪救回，全方位確保歷史數據萬無一失。
+                    支援<strong>登入 Google 雲端帳號</strong>直接將帳本儲存在您的個人的 Google Drive 中，同時具備伺服器硬碟持久化與本機時光機快照，全方位確保歷史數據萬無一失。
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Sub-tabs selector */}
-            <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-stone-100 dark:bg-slate-800/60 text-xs">
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-stone-100 dark:bg-slate-800/60 text-xs">
               <button
                 type="button"
                 onClick={() => setBackupSubTab('gdrive')}
@@ -612,24 +614,6 @@ export const SyncAndBackupModal: React.FC<Props> = ({
               >
                 <History className="w-3 h-3 text-blue-600" />
                 <span>時光機</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setBackupSubTab('trash')}
-                className={`py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1 ${
-                  backupSubTab === 'trash'
-                    ? 'bg-white dark:bg-slate-900 text-stone-900 dark:text-white shadow-xs'
-                    : 'text-stone-500 hover:text-stone-800 dark:text-slate-400'
-                }`}
-              >
-                <Trash2 className="w-3 h-3 text-rose-600" />
-                <span>回收區</span>
-                {trashItems.length > 0 && (
-                  <span className="text-[10px] bg-rose-500 text-white rounded-full px-1">
-                    {trashItems.length}
-                  </span>
-                )}
               </button>
 
               <button
@@ -1016,86 +1000,6 @@ export const SyncAndBackupModal: React.FC<Props> = ({
               </div>
             )}
 
-            {/* Sub-Tab 3: Trash */}
-            {backupSubTab === 'trash' && (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-stone-200 dark:border-slate-800 bg-rose-50/50 dark:bg-rose-950/20 p-4 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div className="text-xs font-bold text-rose-900 dark:text-rose-300 flex items-center gap-1.5">
-                      <Trash2 className="w-4 h-4 text-rose-600" />
-                      <span>防手滑誤刪：最近刪除項目回收區</span>
-                    </div>
-                    <p className="text-[11px] text-rose-700 dark:text-rose-400">
-                      所有刪除的記帳皆在此安全暫存保留，可一鍵原封不動救回！
-                    </p>
-                  </div>
-                  {trashItems.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm('確定要徹底清空回收區的所有紀錄嗎？清空後將無法救回。')) {
-                          clearAllTrash();
-                        }
-                      }}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
-                    >
-                      清空回收區
-                    </button>
-                  )}
-                </div>
-
-                <div className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 divide-y divide-stone-100 dark:divide-slate-850 max-h-60 overflow-y-auto">
-                  {trashItems.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-stone-500 dark:text-slate-400 space-y-1">
-                      <p className="font-semibold text-stone-700 dark:text-slate-300">回收區空空如也</p>
-                      <p className="text-[11px]">任何不小心刪除的記帳都會先暫存至此，給您完全安心的救回保障。</p>
-                    </div>
-                  ) : (
-                    trashItems.map(item => (
-                      <div
-                        key={item.id}
-                        className="p-3.5 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-slate-900/60 text-xs transition-colors"
-                      >
-                        <div className="min-w-0 pr-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-stone-900 dark:text-white truncate">
-                              {item.transaction.title}
-                            </span>
-                            <span className="font-mono font-bold text-stone-900 dark:text-white">
-                              {formatAmount(item.transaction.amount)}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-stone-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
-                            <span>日期：{item.transaction.date}</span>
-                            <span>·</span>
-                            <span>刪除於：{new Date(item.deletedAt).toLocaleString('zh-TW')}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => restoreTrashItem(item.id)}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-xs transition-colors"
-                          >
-                            <Undo2 className="w-3.5 h-3.5" />
-                            <span>救回</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => permanentlyDeleteTrashItem(item.id)}
-                            title="徹底清除"
-                            className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Sub-Tab 4: Offline File Export & Import */}
             {backupSubTab === 'offline' && (

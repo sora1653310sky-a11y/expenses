@@ -40,7 +40,7 @@ const MainContent: React.FC = () => {
   const [editTargetTx, setEditTargetTx] = useState<Transaction | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [syncModalTab, setSyncModalTab] = useState<'sync' | 'backup' | 'family'>('sync');
-  const [syncModalSubTab, setSyncModalSubTab] = useState<'cloud' | 'timemachine' | 'trash' | 'offline'>('cloud');
+  const [syncModalSubTab, setSyncModalSubTab] = useState<'gdrive' | 'cloud' | 'timemachine' | 'offline'>('gdrive');
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
@@ -57,7 +57,7 @@ const MainContent: React.FC = () => {
 
   const handleOpenSyncModal = (
     tab: 'sync' | 'backup' | 'family' = 'sync',
-    subTab: 'gdrive' | 'cloud' | 'timemachine' | 'trash' | 'offline' = 'gdrive'
+    subTab: 'gdrive' | 'cloud' | 'timemachine' | 'offline' = 'gdrive'
   ) => {
     setSyncModalTab(tab);
     setSyncModalSubTab(subTab as any);
