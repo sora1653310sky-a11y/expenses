@@ -125,10 +125,24 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load initial states from localStorage with seed fallbacks
-  const [transactions, setTransactions] = useState<Transaction[]>(() =>
-    loadFromLocalStorage(StorageKeys.TRANSACTIONS, INITIAL_TRANSACTIONS)
-  );
+  // Load initial states from localStorage with seed fallbacks and snapshot recovery
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const loaded = loadFromLocalStorage<Transaction[]>(StorageKeys.TRANSACTIONS, []);
+    if (Array.isArray(loaded) && loaded.length > 0) {
+      return loaded;
+    }
+    // Safety recovery: check local snapshots if primary storage was unexpectedly cleared
+    const snapshots = loadFromLocalStorage<any[]>(StorageKeys.LOCAL_SNAPSHOTS, []);
+    if (
+      Array.isArray(snapshots) &&
+      snapshots.length > 0 &&
+      Array.isArray(snapshots[0]?.transactions) &&
+      snapshots[0].transactions.length > 0
+    ) {
+      return snapshots[0].transactions;
+    }
+    return INITIAL_TRANSACTIONS;
+  });
   const [budget, setBudget] = useState<MonthlyBudget>(() =>
     loadFromLocalStorage(StorageKeys.BUDGET, INITIAL_BUDGET)
   );
@@ -806,46 +820,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const isFirstLoad = isFirstFirestoreLoadRef.current;
         isFirstFirestoreLoadRef.current = false;
 
+        const deletedIds = new Set(trashItemsRef.current.map(t => t.transaction.id));
+        const currentLocal = transactionsRef.current;
+
         if (remoteTxs && remoteTxs.length > 0) {
-          const current = transactionsRef.current;
-          const currentMap = new Map(current.map(t => [t.id, t]));
+          const localMap = new Map(currentLocal.filter(t => !deletedIds.has(t.id)).map(t => [t.id, t]));
           let hasDiff = false;
-          let newRemoteItemFound = false;
+          let newRemoteCount = 0;
 
-          if (current.length !== remoteTxs.length) {
-            hasDiff = true;
-          }
-
+          // Merge remote transactions
           for (const rtx of remoteTxs) {
-            const ltx = currentMap.get(rtx.id);
+            if (!rtx || !rtx.id || deletedIds.has(rtx.id)) continue;
+            const ltx = localMap.get(rtx.id);
             if (!ltx) {
+              localMap.set(rtx.id, rtx);
               hasDiff = true;
-              newRemoteItemFound = true;
-              break;
-            }
-            if ((rtx.updatedAt || 0) > (ltx.updatedAt || 0)) {
-              hasDiff = true;
-              break;
+              newRemoteCount++;
+            } else {
+              const rTime = rtx.updatedAt || rtx.createdAt || 0;
+              const lTime = ltx.updatedAt || ltx.createdAt || 0;
+              if (rTime > lTime) {
+                localMap.set(rtx.id, rtx);
+                hasDiff = true;
+              }
             }
           }
 
-          if (hasDiff || isFirstLoad) {
-            const isItemDeleted = !isFirstLoad && !newRemoteItemFound && current.length > remoteTxs.length;
-            setTransactions(remoteTxs);
-            saveToLocalStorage(StorageKeys.TRANSACTIONS, remoteTxs);
+          // Non-destructive preservation: Keep any non-deleted local transactions not yet in Firestore
+          const remoteIds = new Set(remoteTxs.map(t => t.id));
+          const localOnly = currentLocal.filter(t => !remoteIds.has(t.id) && !deletedIds.has(t.id));
+          if (localOnly.length > 0) {
+            localOnly.forEach(t => localMap.set(t.id, t));
+            // Automatically backup un-synced local transactions to Firestore room
+            bulkUploadTransactionsToFirestore(safeRoomId, localOnly);
+          }
+
+          const merged = Array.from(localMap.values()).sort((a, b) => {
+            const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+            if (dateDiff !== 0) return dateDiff;
+            return (b.createdAt || 0) - (a.createdAt || 0);
+          });
+
+          if (hasDiff || isFirstLoad || currentLocal.length !== merged.length) {
+            setTransactions(merged);
+            saveToLocalStorage(StorageKeys.TRANSACTIONS, merged);
             setSyncState(prev => ({
               ...prev,
               status: 'synced',
               lastSyncedAt: Date.now(),
             }));
-            if (!isFirstLoad) {
+            if (!isFirstLoad && newRemoteCount > 0) {
               const partnerRole =
                 coupleRef.current.currentRole === 'dad' ? coupleRef.current.momName : coupleRef.current.dadName;
-              if (newRemoteItemFound) {
-                showToast(`伴侶 (${partnerRole || '對方'}) 剛剛更新了記帳，已即時同步！`);
-              } else if (isItemDeleted) {
-                showToast(`伴侶 (${partnerRole || '對方'}) 剛剛刪除了一筆帳務，已即時同步！`);
-              }
+              showToast(`伴侶 (${partnerRole || '對方'}) 剛剛同步了 ${newRemoteCount} 筆帳務！`);
             }
           } else {
             setSyncState(prev => ({
@@ -854,25 +881,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }));
           }
         } else if (remoteTxs.length === 0) {
-          if (isFirstLoad && transactionsRef.current.length > 0) {
-            // Initialize room in Firestore with local transactions if cloud collection is fresh on boot
-            bulkUploadTransactionsToFirestore(safeRoomId, transactionsRef.current);
+          // If remote Firestore has 0 transactions but local has transactions:
+          // NEVER wipe local transactions! Back them up to Firestore room instead.
+          if (currentLocal.length > 0) {
+            bulkUploadTransactionsToFirestore(safeRoomId, currentLocal);
             writeRoomMetaToFirestore(safeRoomId, {
               budget: budgetRef.current,
               babyInfo: babyInfoRef.current,
               familySettings: { couple: coupleRef.current },
               updatedBy: coupleRef.current.currentRole === 'dad' ? coupleRef.current.dadName : coupleRef.current.momName,
             });
-          } else if (!isFirstLoad) {
-            // Cloud has 0 transactions (e.g. all transactions deleted by spouse)
-            setTransactions([]);
-            saveToLocalStorage(StorageKeys.TRANSACTIONS, []);
-            setSyncState(prev => ({
-              ...prev,
-              status: 'synced',
-              lastSyncedAt: Date.now(),
-            }));
           }
+          setSyncState(prev => ({
+            ...prev,
+            status: 'synced',
+            lastSyncedAt: Date.now(),
+          }));
         }
       },
       (err) => {
@@ -1224,7 +1248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeRoomMetaToFirestore(safeRoomId, { budget: newBudget, updatedBy: updater });
 
       if (syncState.isAutoSync && syncState.roomId) {
-        setTimeout(() => pushToServer(undefined, newBudget), 100);
+        setTimeout(() => pushToServer(transactionsRef.current, newBudget, babyInfoRef.current, coupleRef.current), 100);
       }
       showToast('每月預算設定已儲存！');
     },
@@ -1241,7 +1265,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeRoomMetaToFirestore(safeRoomId, { babyInfo: info, updatedBy: updater });
 
       if (syncState.isAutoSync && syncState.roomId) {
-        setTimeout(() => pushToServer(undefined, undefined, info), 100);
+        setTimeout(() => pushToServer(transactionsRef.current, budgetRef.current, info, coupleRef.current), 100);
       }
       showToast('寶寶資料已更新！');
     },
@@ -1263,7 +1287,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         writeRoomMetaToFirestore(safeRoomId, { familySettings: { couple: next }, updatedBy: updater });
 
         if (syncState.isAutoSync && syncState.roomId) {
-          setTimeout(() => pushToServer(undefined, undefined, undefined, next), 100);
+          setTimeout(() => pushToServer(transactionsRef.current, budgetRef.current, babyInfoRef.current, next), 100);
         }
         return next;
       });

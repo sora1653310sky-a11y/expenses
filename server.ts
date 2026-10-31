@@ -159,8 +159,8 @@ app.post('/api/sync/:roomId', (req: Request, res: Response) => {
   const newVersion = (current?.version || 0) + 1;
   const now = Date.now();
 
-  // Accept valid transactions array (allows deleting items down to empty)
-  const validTransactions = Array.isArray(transactions)
+  // Accept valid transactions array (safeguard against resetting existing transactions to empty)
+  const validTransactions = Array.isArray(transactions) && (transactions.length > 0 || !current?.transactions?.length)
     ? transactions
     : (current?.transactions || []);
 
